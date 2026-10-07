@@ -10,33 +10,167 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BerandaRouteImport } from './routes/beranda'
+import { Route as ChallengeRouteImport } from './routes/challenge'
+import { Route as ChallengeSelesaiRouteImport } from './routes/challenge-selesai'
+import { Route as KoleksiRouteImport } from './routes/koleksi'
+import { Route as OrangTuaRouteImport } from './routes/orang-tua'
+import { Route as PengaturanRouteImport } from './routes/pengaturan'
+import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as RewardRouteImport } from './routes/reward'
+import { Route as SholatSelesaiRouteImport } from './routes/sholat-selesai'
+import { Route as TambahAnakRouteImport } from './routes/tambah-anak'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BerandaRoute = BerandaRouteImport.update({
+  id: '/beranda',
+  path: '/beranda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChallengeRoute = ChallengeRouteImport.update({
+  id: '/challenge',
+  path: '/challenge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChallengeSelesaiRoute = ChallengeSelesaiRouteImport.update({
+  id: '/challenge-selesai',
+  path: '/challenge-selesai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KoleksiRoute = KoleksiRouteImport.update({
+  id: '/koleksi',
+  path: '/koleksi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrangTuaRoute = OrangTuaRouteImport.update({
+  id: '/orang-tua',
+  path: '/orang-tua',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PengaturanRoute = PengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RewardRoute = RewardRouteImport.update({
+  id: '/reward',
+  path: '/reward',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SholatSelesaiRoute = SholatSelesaiRouteImport.update({
+  id: '/sholat-selesai',
+  path: '/sholat-selesai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TambahAnakRoute = TambahAnakRouteImport.update({
+  id: '/tambah-anak',
+  path: '/tambah-anak',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/beranda': typeof BerandaRoute
+  '/challenge': typeof ChallengeRoute
+  '/challenge-selesai': typeof ChallengeSelesaiRoute
+  '/koleksi': typeof KoleksiRoute
+  '/orang-tua': typeof OrangTuaRoute
+  '/pengaturan': typeof PengaturanRoute
+  '/progress': typeof ProgressRoute
+  '/reward': typeof RewardRoute
+  '/sholat-selesai': typeof SholatSelesaiRoute
+  '/tambah-anak': typeof TambahAnakRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/beranda': typeof BerandaRoute
+  '/challenge': typeof ChallengeRoute
+  '/challenge-selesai': typeof ChallengeSelesaiRoute
+  '/koleksi': typeof KoleksiRoute
+  '/orang-tua': typeof OrangTuaRoute
+  '/pengaturan': typeof PengaturanRoute
+  '/progress': typeof ProgressRoute
+  '/reward': typeof RewardRoute
+  '/sholat-selesai': typeof SholatSelesaiRoute
+  '/tambah-anak': typeof TambahAnakRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/beranda': typeof BerandaRoute
+  '/challenge': typeof ChallengeRoute
+  '/challenge-selesai': typeof ChallengeSelesaiRoute
+  '/koleksi': typeof KoleksiRoute
+  '/orang-tua': typeof OrangTuaRoute
+  '/pengaturan': typeof PengaturanRoute
+  '/progress': typeof ProgressRoute
+  '/reward': typeof RewardRoute
+  '/sholat-selesai': typeof SholatSelesaiRoute
+  '/tambah-anak': typeof TambahAnakRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/beranda'
+    | '/challenge'
+    | '/challenge-selesai'
+    | '/koleksi'
+    | '/orang-tua'
+    | '/pengaturan'
+    | '/progress'
+    | '/reward'
+    | '/sholat-selesai'
+    | '/tambah-anak'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/beranda'
+    | '/challenge'
+    | '/challenge-selesai'
+    | '/koleksi'
+    | '/orang-tua'
+    | '/pengaturan'
+    | '/progress'
+    | '/reward'
+    | '/sholat-selesai'
+    | '/tambah-anak'
+  id:
+    | '__root__'
+    | '/'
+    | '/beranda'
+    | '/challenge'
+    | '/challenge-selesai'
+    | '/koleksi'
+    | '/orang-tua'
+    | '/pengaturan'
+    | '/progress'
+    | '/reward'
+    | '/sholat-selesai'
+    | '/tambah-anak'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BerandaRoute: typeof BerandaRoute
+  ChallengeRoute: typeof ChallengeRoute
+  ChallengeSelesaiRoute: typeof ChallengeSelesaiRoute
+  KoleksiRoute: typeof KoleksiRoute
+  OrangTuaRoute: typeof OrangTuaRoute
+  PengaturanRoute: typeof PengaturanRoute
+  ProgressRoute: typeof ProgressRoute
+  RewardRoute: typeof RewardRoute
+  SholatSelesaiRoute: typeof SholatSelesaiRoute
+  TambahAnakRoute: typeof TambahAnakRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +182,91 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/beranda': {
+      id: '/beranda'
+      path: '/beranda'
+      fullPath: '/beranda'
+      preLoaderRoute: typeof BerandaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/challenge': {
+      id: '/challenge'
+      path: '/challenge'
+      fullPath: '/challenge'
+      preLoaderRoute: typeof ChallengeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/challenge-selesai': {
+      id: '/challenge-selesai'
+      path: '/challenge-selesai'
+      fullPath: '/challenge-selesai'
+      preLoaderRoute: typeof ChallengeSelesaiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/koleksi': {
+      id: '/koleksi'
+      path: '/koleksi'
+      fullPath: '/koleksi'
+      preLoaderRoute: typeof KoleksiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orang-tua': {
+      id: '/orang-tua'
+      path: '/orang-tua'
+      fullPath: '/orang-tua'
+      preLoaderRoute: typeof OrangTuaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pengaturan': {
+      id: '/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/pengaturan'
+      preLoaderRoute: typeof PengaturanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reward': {
+      id: '/reward'
+      path: '/reward'
+      fullPath: '/reward'
+      preLoaderRoute: typeof RewardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sholat-selesai': {
+      id: '/sholat-selesai'
+      path: '/sholat-selesai'
+      fullPath: '/sholat-selesai'
+      preLoaderRoute: typeof SholatSelesaiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tambah-anak': {
+      id: '/tambah-anak'
+      path: '/tambah-anak'
+      fullPath: '/tambah-anak'
+      preLoaderRoute: typeof TambahAnakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BerandaRoute: BerandaRoute,
+  ChallengeRoute: ChallengeRoute,
+  ChallengeSelesaiRoute: ChallengeSelesaiRoute,
+  KoleksiRoute: KoleksiRoute,
+  OrangTuaRoute: OrangTuaRoute,
+  PengaturanRoute: PengaturanRoute,
+  ProgressRoute: ProgressRoute,
+  RewardRoute: RewardRoute,
+  SholatSelesaiRoute: SholatSelesaiRoute,
+  TambahAnakRoute: TambahAnakRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
