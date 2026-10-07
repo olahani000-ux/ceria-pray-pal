@@ -289,7 +289,7 @@ export function ChallengeScreen() {
         {prayers.map((prayer, row) => (
           <div key={prayer.name} className="week-grid-row">
             <span className="week-prayer">
-              <span className={`prayer-symbol ${prayer.tone}`}>{prayer.symbol}</span>
+              <PrayerIcon name={prayer.name} />
               {prayer.name}
             </span>
             {(weekRows[row] ?? []).map((done, col) => (
