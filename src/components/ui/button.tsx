@@ -9,6 +9,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        joy: "joy-button",
+        welcome: "welcome-button",
+        softIcon: "soft-icon-button",
+        sky: "sky-button",
+        prayer: "prayer-button",
+        segment: "segment-button",
+        badgeTile: "badge-tile",
+        template: "template-button",
+        camera: "camera-button",
+        character: "character-button",
+        swatch: "swatch-button",
         default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
