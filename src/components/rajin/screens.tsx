@@ -35,6 +35,7 @@ import { characters, prayers, useRajin } from "@/lib/rajin-state";
 import welcome from "@/assets/welcome.jpg";
 import girl from "@/assets/aisyah.png";
 import scenery from "@/assets/celebration.jpg";
+import { PrayerIcon } from "./prayer-icon";
 
 export function WelcomeScreen() {
   return (
@@ -124,7 +125,7 @@ export function HomeScreen() {
                 asChild
               >
                 <Link to="/sholat-selesai">
-                  <span className={`prayer-symbol ${prayer.tone}`}>{prayer.symbol}</span>
+                  <PrayerIcon name={prayer.name} />
                   <span className="prayer-label">
                     <strong>{prayer.name}</strong>
                     <small>{prayer.time}</small>

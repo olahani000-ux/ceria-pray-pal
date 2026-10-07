@@ -14,3 +14,4 @@
 - Use the RajinProvider for temporary in-memory preview data only; persistence and protected parent access await a separate backend phase.
 - Keep shared mobile chrome in the Rajin shared module and reference-screen views in the screens module to maintain one visual system across routes.
 - Define all presentation tokens and app-specific control variants in the global stylesheet and Button variants; keep the reference's rounded pastel treatments consistent.
+- Render home prayer illustrations through the dedicated PrayerIcon SVG module with global semantic palette classes; icon-only updates must not affect sibling screens or row geometry.

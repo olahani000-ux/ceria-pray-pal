@@ -505,6 +505,38 @@ textarea:focus-visible {
   line-height: 1;
   font-family: sans-serif;
 }
+.prayer-illustration {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+}
+.prayer-button .prayer-illustration svg {
+  width: 32px;
+  height: 32px;
+  overflow: visible;
+}
+.prayer-art-mint-soft { fill: var(--mint-soft); }
+.prayer-art-green { fill: var(--primary); }
+.prayer-art-green-line { stroke: var(--primary); }
+.prayer-art-cream { fill: var(--card); }
+.prayer-art-light-line { stroke: var(--card); }
+.prayer-art-gold-soft { fill: var(--gold-soft); }
+.prayer-art-gold { fill: var(--gold); }
+.prayer-art-gold-line { stroke: var(--gold-ink); }
+.prayer-art-blue-soft { fill: var(--secondary); }
+.prayer-art-blue { fill: var(--blue); }
+.prayer-art-blue-line { stroke: var(--blue-ink); }
+.prayer-art-rose-soft { fill: var(--pink-soft); }
+.prayer-art-rose { fill: var(--rose); }
+.prayer-art-rose-line { stroke: var(--rose-ink); }
+.prayer-art-peach { fill: var(--peach); }
+.prayer-art-peach-line { stroke: var(--peach-soft); }
+.prayer-art-night-soft { fill: color-mix(in oklch, var(--violet) 15%, var(--card)); }
+.prayer-art-night { fill: var(--violet-ink); }
+.prayer-art-night-light { fill: var(--violet); }
+.prayer-art-night-light-line { stroke: var(--violet); }
 .prayer-symbol.blue {
   background: color-mix(in oklch, var(--blue) 13%, var(--card));
   color: var(--blue-ink);
