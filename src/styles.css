@@ -471,8 +471,15 @@ textarea:focus-visible {
   font-size: 10px;
   font-weight: 600;
 }
-.mission-medal {
-  font-size: 36px;
+.prayer-illustration.mission-medal {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+.prayer-illustration.mission-medal svg {
+  width: 38px;
+  height: 38px;
+  overflow: visible;
 }
 .prayer-list {
   display: flex;

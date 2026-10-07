@@ -35,7 +35,7 @@ import { characters, prayers, useRajin } from "@/lib/rajin-state";
 import welcome from "@/assets/welcome.jpg";
 import girl from "@/assets/aisyah.png";
 import scenery from "@/assets/celebration.jpg";
-import { PrayerIcon } from "./prayer-icon";
+import { PrayerIcon, MissionMedalIcon } from "./prayer-icon";
 
 export function WelcomeScreen() {
   return (
@@ -105,9 +105,7 @@ export function HomeScreen() {
         <section className="paper mission-paper">
           <p className="date-label">Senin, 28 April 2025</p>
           <div className="mission-title">
-            <span className="mission-medal">
-              <Star size={35} fill="currentColor" />
-            </span>
+            <MissionMedalIcon />
             <div>
               <h2>Misi Hari Ini</h2>
               <p>Ayo selesaikan 5 waktu sholat hari ini!</p>
