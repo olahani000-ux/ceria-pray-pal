@@ -48,3 +48,23 @@ export function PrayerIcon({ name }: { name: string }) {
     </span>
   );
 }
+
+/** Pastel gold medal with ribbon and sparkles for the "Misi Hari Ini" header. */
+export function MissionMedalIcon() {
+  return (
+    <span className="prayer-illustration mission-medal" aria-hidden="true">
+      <svg viewBox="0 0 40 40" width="38" height="38" fill="none" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+        <path d="M11 2h8l-2 13-9-3.5Z" className="prayer-art-rose" />
+        <path d="M29 2h-8l2 13 9-3.5Z" className="prayer-art-peach" />
+        <path d="M11 2h8l-.7 4.5h-6.9Z" className="prayer-art-rose-line" strokeWidth="1" opacity="0.45" />
+        <path d="M29 2h-8l.7 4.5h6.9Z" className="prayer-art-rose-line" strokeWidth="1" opacity="0.45" />
+        <circle cx="20" cy="26" r="11" className="prayer-art-gold" />
+        <circle cx="20" cy="26" r="7.5" className="prayer-art-gold-soft" />
+        <path d="m20 21.5 1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5Z" className="prayer-art-cream" />
+        <path d="M5.5 12.5v4M3.5 14.5h4" className="prayer-art-gold-line" strokeWidth="2" />
+        <path d="M34.5 15.5v3M33 17h3" className="prayer-art-rose-line" strokeWidth="2" />
+        <circle cx="34" cy="6.5" r="1.5" className="prayer-art-night-light" />
+      </svg>
+    </span>
+  );
+}
