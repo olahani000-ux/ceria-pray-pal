@@ -618,7 +618,7 @@ export function ProgressScreen() {
         <div className="prayer-stats">
           {prayers.map((p, i) => (
             <div key={p.name}>
-              <span className={`prayer-symbol ${p.tone}`}>{p.symbol}</span>
+              <PrayerIcon name={p.name} />
               <small>{p.name}</small>
               <strong className={i === 2 ? "incomplete-stat" : ""}>
                 {i === 0 || i === 2 ? "6" : "7"} / 7
@@ -919,7 +919,7 @@ export function SettingsScreen() {
         <div className="reminder-list">
           {prayers.map((p, i) => (
             <div className="reminder-row" key={p.name}>
-              <span className={`prayer-symbol ${p.tone}`}>{p.symbol}</span>
+              <PrayerIcon name={p.name} />
               <label htmlFor={`time-${i}`}>{p.name}</label>
               <input
                 type="time"
