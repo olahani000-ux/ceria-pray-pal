@@ -820,11 +820,13 @@ textarea:focus-visible {
   font-size: 10px;
   font-weight: 800;
 }
-.week-prayer .prayer-symbol {
+.week-prayer .prayer-illustration {
   width: 21px;
   height: 26px;
-  font-size: 19px;
-  background: transparent;
+}
+.week-prayer .prayer-illustration svg {
+  width: 21px;
+  height: 21px;
 }
 .week-cell {
   height: 38px;
