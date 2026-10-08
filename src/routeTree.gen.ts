@@ -16,6 +16,7 @@ import { Route as ChallengeSelesaiRouteImport } from './routes/challenge-selesai
 import { Route as KoleksiRouteImport } from './routes/koleksi'
 import { Route as OrangTuaRouteImport } from './routes/orang-tua'
 import { Route as PengaturanRouteImport } from './routes/pengaturan'
+import { Route as ProfilAnakRouteImport } from './routes/profil-anak'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as RewardRouteImport } from './routes/reward'
 import { Route as SholatSelesaiRouteImport } from './routes/sholat-selesai'
@@ -56,6 +57,11 @@ const PengaturanRoute = PengaturanRouteImport.update({
   path: '/pengaturan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfilAnakRoute = ProfilAnakRouteImport.update({
+  id: '/profil-anak',
+  path: '/profil-anak',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/koleksi': typeof KoleksiRoute
   '/orang-tua': typeof OrangTuaRoute
   '/pengaturan': typeof PengaturanRoute
+  '/profil-anak': typeof ProfilAnakRoute
   '/progress': typeof ProgressRoute
   '/reward': typeof RewardRoute
   '/sholat-selesai': typeof SholatSelesaiRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/koleksi': typeof KoleksiRoute
   '/orang-tua': typeof OrangTuaRoute
   '/pengaturan': typeof PengaturanRoute
+  '/profil-anak': typeof ProfilAnakRoute
   '/progress': typeof ProgressRoute
   '/reward': typeof RewardRoute
   '/sholat-selesai': typeof SholatSelesaiRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/koleksi': typeof KoleksiRoute
   '/orang-tua': typeof OrangTuaRoute
   '/pengaturan': typeof PengaturanRoute
+  '/profil-anak': typeof ProfilAnakRoute
   '/progress': typeof ProgressRoute
   '/reward': typeof RewardRoute
   '/sholat-selesai': typeof SholatSelesaiRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/koleksi'
     | '/orang-tua'
     | '/pengaturan'
+    | '/profil-anak'
     | '/progress'
     | '/reward'
     | '/sholat-selesai'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/koleksi'
     | '/orang-tua'
     | '/pengaturan'
+    | '/profil-anak'
     | '/progress'
     | '/reward'
     | '/sholat-selesai'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/koleksi'
     | '/orang-tua'
     | '/pengaturan'
+    | '/profil-anak'
     | '/progress'
     | '/reward'
     | '/sholat-selesai'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   KoleksiRoute: typeof KoleksiRoute
   OrangTuaRoute: typeof OrangTuaRoute
   PengaturanRoute: typeof PengaturanRoute
+  ProfilAnakRoute: typeof ProfilAnakRoute
   ProgressRoute: typeof ProgressRoute
   RewardRoute: typeof RewardRoute
   SholatSelesaiRoute: typeof SholatSelesaiRoute
@@ -224,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PengaturanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profil-anak': {
+      id: '/profil-anak'
+      path: '/profil-anak'
+      fullPath: '/profil-anak'
+      preLoaderRoute: typeof ProfilAnakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/progress': {
       id: '/progress'
       path: '/progress'
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   KoleksiRoute: KoleksiRoute,
   OrangTuaRoute: OrangTuaRoute,
   PengaturanRoute: PengaturanRoute,
+  ProfilAnakRoute: ProfilAnakRoute,
   ProgressRoute: ProgressRoute,
   RewardRoute: RewardRoute,
   SholatSelesaiRoute: SholatSelesaiRoute,

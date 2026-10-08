@@ -1717,3 +1717,37 @@ legend {
     }
   }
 }
+
+@keyframes avatar-pop {
+  0% {
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.avatar-selected {
+  animation: avatar-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 10px 25px -3px rgba(139, 92, 246, 0.35);
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+

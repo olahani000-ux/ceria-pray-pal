@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { ChildAvatarIcon } from "@/components/ChildAvatar";
 import {
   ArrowLeft,
   ArrowRight,
@@ -41,6 +42,22 @@ import { parentPinSchema } from "@/lib/parent-pin";
 import { verifyParentPin } from "@/lib/parent-pin.functions";
 
 export function WelcomeScreen() {
+  const navigate = useNavigate();
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("childName");
+      const storedAvatar = localStorage.getItem("childAvatar");
+      if (storedName && storedAvatar) {
+        setHasProfile(true);
+        navigate({ to: "/beranda" });
+      } else {
+        setHasProfile(false);
+      }
+    }
+  }, [navigate]);
+
   return (
     <main className="welcome-screen">
       <img
@@ -68,7 +85,7 @@ export function WelcomeScreen() {
       </div>
       <div className="welcome-bottom">
         <Button variant="welcome" size="lg" asChild>
-          <Link to="/beranda">
+          <Link to={hasProfile ? "/beranda" : "/profil-anak"}>
             Mulai <ArrowRight size={18} />
           </Link>
         </Button>
@@ -84,9 +101,41 @@ export function WelcomeScreen() {
 
 export function HomeScreen() {
   const state = useRajin();
+  const navigate = useNavigate();
   const kid = state.children[state.activeChild] ?? state.children[0];
   const [checked] = useState([true, true, false, false, false]);
+
+  const [childProfile, setChildProfile] = useState<{
+    name: string;
+    avatar: string;
+    gender: "laki-laki" | "perempuan";
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("childName");
+      const storedAvatar = localStorage.getItem("childAvatar");
+      const storedGender =
+        (localStorage.getItem("childGender") as "laki-laki" | "perempuan") || "laki-laki";
+
+      if (!storedName || !storedAvatar) {
+        navigate({ to: "/profil-anak" });
+        return;
+      }
+      setChildProfile({
+        name: storedName,
+        avatar: storedAvatar,
+        gender: storedGender,
+      });
+    }
+  }, [navigate]);
+
   if (!kid) return null;
+
+  const displayName = childProfile?.name || kid.name;
+  const isFemale = childProfile?.gender === "perempuan";
+  const greetingText = isFemale ? "Assalamu’alaikum, Sholehah" : "Assalamu’alaikum, Sholeh";
+
   return (
     <main className="app-page home-page with-nav">
       <header className="home-header">
@@ -95,10 +144,16 @@ export function HomeScreen() {
         </Link>
         <SettingLink />
         <div className="home-greeting">
-          <Avatar character={kid.character} />
+          {childProfile?.avatar ? (
+            <span className="kid-avatar shadow-md overflow-hidden bg-white/90">
+              <ChildAvatarIcon avatarId={childProfile.avatar} size={76} />
+            </span>
+          ) : (
+            <Avatar character={kid.character} />
+          )}
           <div>
-            <p>Assalamu’alaikum,</p>
-            <h1>{kid.name}</h1>
+            <p>{greetingText}</p>
+            <h1>{displayName}</h1>
             <span className="tiny-label">Beranda</span>
           </div>
           <span className="greeting-spark">✧</span>
