@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChildAvatarIcon } from "@/components/ChildAvatar";
 import {
@@ -19,6 +20,7 @@ import {
   Plus,
   Star,
   Trophy,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +42,7 @@ import { PrayerIcon, MissionMedalIcon } from "./prayer-icon";
 import { useServerFn } from "@tanstack/react-start";
 import { parentPinSchema } from "@/lib/parent-pin";
 import { verifyParentPin } from "@/lib/parent-pin.functions";
+import { getPrayerDayKey } from "@/utils/prayerTime";
 
 export function WelcomeScreen() {
   const navigate = useNavigate();
@@ -99,11 +102,427 @@ export function WelcomeScreen() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Checklist sholat harian (disimpan di localStorage)                  */
+/* ------------------------------------------------------------------ */
+
+const HISTORY_KEY = "rajin-history-v1";
+const LEGACY_KEY = "rajin-checklist-v1"; // format lama (satu hari), dimigrasikan otomatis
+const MAX_HISTORY_DAYS = 120;
+
+/** Riwayat centang: { "2026-10-08": [true, true, false, false, false] } */
+type ChecklistHistory = Record<string, boolean[]>;
+
+const emptyChecklist = (total: number): boolean[] => Array<boolean>(total).fill(false);
+
+const MONTHS_ID = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const toDateKey = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const fromDateKey = (key: string) => {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+};
+
+/** Tanggal hari ini, mis. "Kamis, 8 Oktober 2026" */
+function formatToday(now: Date = new Date()) {
+  return `${DAYS_ID[now.getDay()]}, ${now.getDate()} ${MONTHS_ID[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+/** 7 tanggal (Senin-Minggu) untuk minggu ke-`offset` dari hari sholat `todayKey`. */
+function weekDays(todayKey: string, offset: number): Date[] {
+  const base = fromDateKey(todayKey);
+  const monday = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) + offset * 7);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+/** Contoh: "21 – 27 April 2025" atau "28 Apr – 4 Mei 2025" */
+function weekLabel(days: Date[]) {
+  const first = days[0];
+  const last = days[6];
+  if (first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()) {
+    return `${first.getDate()} – ${last.getDate()} ${MONTHS_ID[last.getMonth()]} ${last.getFullYear()}`;
+  }
+  return `${first.getDate()} ${MONTHS_SHORT[first.getMonth()]} – ${last.getDate()} ${MONTHS_SHORT[last.getMonth()]} ${last.getFullYear()}`;
+}
+
+/** rows[sholat][hari] = selesai atau belum; stars = jumlah sholat selesai (1 bintang per sholat). */
+function weekProgress(history: ChecklistHistory, days: Date[], total: number) {
+  const rows = Array.from({ length: total }, (_, p) =>
+    days.map((d) => history[toDateKey(d)]?.[p] === true),
+  );
+  return { rows, stars: rows.flat().filter(Boolean).length, max: total * 7 };
+}
+
+function loadHistory(childKey: string): ChecklistHistory {
+  const history: ChecklistHistory = {};
+  try {
+    const raw = localStorage.getItem(`${HISTORY_KEY}:${childKey}`);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [day, done] of Object.entries(parsed as Record<string, unknown>)) {
+          if (Array.isArray(done)) history[day] = done.map((v) => v === true);
+        }
+      }
+    }
+    // Migrasi data format lama (satu hari saja)
+    const legacy = localStorage.getItem(`${LEGACY_KEY}:${childKey}`);
+    if (legacy) {
+      const old = JSON.parse(legacy) as { day?: string; done?: unknown };
+      if (old.day && Array.isArray(old.done) && !history[old.day]) {
+        history[old.day] = old.done.map((v) => v === true);
+      }
+    }
+  } catch {
+    /* data rusak: pakai riwayat kosong */
+  }
+  return history;
+}
+
+function saveChecklist(childKey: string, done: boolean[]) {
+  try {
+    const history = loadHistory(childKey);
+    history[getPrayerDayKey()] = done;
+    // Simpan secukupnya saja: buang hari-hari paling lama
+    const days = Object.keys(history).sort();
+    for (const old of days.slice(0, Math.max(0, days.length - MAX_HISTORY_DAYS))) {
+      delete history[old];
+    }
+    localStorage.setItem(`${HISTORY_KEY}:${childKey}`, JSON.stringify(history));
+    localStorage.removeItem(`${LEGACY_KEY}:${childKey}`);
+  } catch {
+    /* penyimpanan penuh / mode privat: abaikan */
+  }
+}
+
+/** Muat riwayat setelah mount; segarkan saat tab aktif lagi, tab lain menyimpan, atau tiap menit. */
+function useChecklistHistory(childKey: string) {
+  const [history, setHistory] = useState<ChecklistHistory | null>(null);
+  const [todayKey, setTodayKey] = useState<string | null>(null);
+
+  const refresh = useCallback(() => {
+    setHistory(loadHistory(childKey));
+    setTodayKey(getPrayerDayKey());
+  }, [childKey]);
+
+  useEffect(() => {
+    refresh();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("storage", refresh);
+    const timer = window.setInterval(refresh, 60_000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("storage", refresh);
+      window.clearInterval(timer);
+    };
+  }, [refresh]);
+
+  return { history, todayKey, refresh };
+}
+
+/* ------------------------------------------------------------------ */
+/* Modal "MasyaAllah!" (tengah layar, background blur)                 */
+/* ------------------------------------------------------------------ */
+
+function PrayerDoneModal({ prayerName, onClose }: { prayerName: string; onClose: () => void }) {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCloseRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  const blur = "blur(10px) saturate(1.15)";
+
+  return createPortal(
+    <div
+      className="rs-modal-backdrop"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        background: "rgba(18, 32, 56, 0.45)",
+        backdropFilter: blur,
+        WebkitBackdropFilter: blur,
+      }}
+    >
+      <style>{`
+        @keyframes rs-backdrop-in { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes rs-card-in {
+          from { opacity: 0; transform: translateY(18px) scale(.92) }
+          60% { transform: translateY(-2px) scale(1.01) }
+          to { opacity: 1; transform: none }
+        }
+        @keyframes rs-twinkle {
+          0%, 100% { transform: scale(1) rotate(0deg); opacity: .95 }
+          50% { transform: scale(1.25) rotate(12deg); opacity: .7 }
+        }
+        .rs-modal-backdrop { animation: rs-backdrop-in .22s ease-out both }
+        .rs-modal-card { animation: rs-card-in .38s cubic-bezier(.2,.9,.3,1.1) both }
+        .rs-spark { animation: rs-twinkle 2.4s ease-in-out infinite }
+        @media (prefers-reduced-motion: reduce) {
+          .rs-modal-backdrop, .rs-modal-card, .rs-spark { animation: none !important }
+        }
+      `}</style>
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rs-modal-title"
+        className="rs-modal-card"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          containerType: "inline-size",
+          width: "min(92vw, 400px, calc(86dvh * 2 / 3))",
+          aspectRatio: "2 / 3",
+          borderRadius: 28,
+          border: "3px solid rgba(255,255,255,0.85)",
+          boxShadow: "0 24px 60px rgba(10,20,40,0.45), inset 0 0 0 1px rgba(255,255,255,0.4)",
+          backgroundColor: "#bfe3ff",
+          backgroundImage: `url(${scenery})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+        }}
+      >
+        {/* Tombol tutup */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Tutup"
+          style={{
+            position: "absolute",
+            top: "3.5cqw",
+            right: "3.5cqw",
+            zIndex: 3,
+            width: "10cqw",
+            height: "10cqw",
+            display: "grid",
+            placeItems: "center",
+            borderRadius: "50%",
+            border: "none",
+            background: "rgba(255,255,255,0.92)",
+            color: "#5b6478",
+            boxShadow: "0 1cqw 3cqw rgba(30,50,90,0.25)",
+            cursor: "pointer",
+          }}
+        >
+          <X size="55%" strokeWidth={2.6} />
+        </button>
+
+        {/* Kilau dekorasi */}
+        <span
+          className="rs-spark"
+          aria-hidden="true"
+          style={{ position: "absolute", top: "17cqw", left: "10cqw", fontSize: "7cqw", color: "#ffd447" }}
+        >
+          ✦
+        </span>
+        <span
+          className="rs-spark"
+          aria-hidden="true"
+          style={{ position: "absolute", top: "50cqw", right: "12cqw", fontSize: "8cqw", color: "#ffd447", animationDelay: ".6s" }}
+        >
+          ✦
+        </span>
+        <span
+          className="rs-spark"
+          aria-hidden="true"
+          style={{ position: "absolute", top: "46cqw", left: "9cqw", fontSize: "6cqw", color: "#ffd447", animationDelay: "1.2s" }}
+        >
+          ✦
+        </span>
+
+        {/* Judul */}
+        <div
+          style={{
+            position: "absolute",
+            top: "6cqw",
+            left: 0,
+            right: 0,
+            zIndex: 2,
+            textAlign: "center",
+            padding: "0 6cqw",
+          }}
+        >
+          <h2
+            id="rs-modal-title"
+            style={{
+              margin: 0,
+              fontSize: "13.5cqw",
+              fontWeight: 900,
+              lineHeight: 1.05,
+              color: "#f04e6e",
+              letterSpacing: "-0.01em",
+              transform: "rotate(-3deg)",
+              WebkitTextStroke: "1.6cqw #ffffff",
+              paintOrder: "stroke fill",
+              textShadow: "0 0.8cqw 0 rgba(200,40,80,0.25), 0 2cqw 3cqw rgba(30,60,120,0.25)",
+            }}
+          >
+            MasyaAllah!
+          </h2>
+          <p
+            style={{
+              margin: "3cqw 0 0",
+              fontSize: "4.6cqw",
+              fontWeight: 700,
+              lineHeight: 1.25,
+              color: "#2a3660",
+              textShadow: "0 0 3cqw rgba(255,255,255,0.95)",
+            }}
+          >
+            Kamu sudah menyelesaikan
+            <br />
+            <strong style={{ fontSize: "6cqw", fontWeight: 800 }}>Sholat {prayerName}</strong>
+          </p>
+        </div>
+
+        {/* Karakter */}
+        <img
+          src={girl}
+          alt="Aisyah tersenyum bahagia selesai sholat"
+          width={1024}
+          height={1024}
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: "32cqw",
+            width: "78cqw",
+            height: "auto",
+            transform: "translateX(-50%)",
+            zIndex: 1,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Panel bawah */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2,
+            padding: "9cqw 5cqw 5cqw",
+            background:
+              "linear-gradient(180deg, rgba(253,245,229,0) 0%, rgba(253,245,229,0.92) 22%, #fdf5e5 40%)",
+          }}
+        >
+          <section
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "3.5cqw",
+              padding: "4cqw 5cqw",
+              borderRadius: "6cqw",
+              background: "rgba(255,252,246,0.96)",
+              border: "0.5cqw solid rgba(255,255,255,0.9)",
+              boxShadow: "0 1.2cqw 4cqw rgba(120,90,40,0.18)",
+            }}
+          >
+            <span style={{ width: "14cqw", height: "14cqw", flex: "none", display: "block" }}>
+              <Star size="100%" fill="#ffc83a" color="#f2a30f" strokeWidth={1.6} />
+            </span>
+            <div>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "7.4cqw",
+                  fontWeight: 900,
+                  lineHeight: 1.1,
+                  color: "#252d57",
+                }}
+              >
+                +1 Bintang
+              </h3>
+              <p style={{ margin: "1cqw 0 0", fontSize: "3.9cqw", lineHeight: 1.35, color: "#3b4268" }}>
+                Satu lagi misi selesai!
+                <br />
+                Semoga semakin dekat
+                <br />
+                dengan Allah ♡
+              </p>
+            </div>
+          </section>
+
+          <Button
+            variant="joy"
+            size="lg"
+            className="w-full"
+            style={{ marginTop: "4cqw" }}
+            onClick={onClose}
+            autoFocus
+          >
+            <Star size={20} fill="#ffd447" color="#ffd447" /> Alhamdulillah{" "}
+            <ChevronRight size={19} />
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function HomeScreen() {
   const state = useRajin();
   const navigate = useNavigate();
   const kid = state.children[state.activeChild] ?? state.children[0];
-  const [checked] = useState([true, true, false, false, false]);
+  const total = prayers.length;
+  const childKey = String(state.activeChild ?? 0);
+  const [celebrating, setCelebrating] = useState<string | null>(null);
+  const { history, todayKey, refresh } = useChecklistHistory(childKey);
+
+  // Centang hari ini, dibaca dari riwayat di localStorage (kosong dulu sebelum mount, aman untuk SSR)
+  const checked = emptyChecklist(total).map(
+    (_, i) => history && todayKey ? history[todayKey]?.[i] === true : false,
+  );
+  const doneCount = checked.filter(Boolean).length;
+  const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  const week = history && todayKey ? weekProgress(history, weekDays(todayKey, 0), total) : null;
+  const weekStars = week?.stars ?? 0;
+  const [todayLabel, setTodayLabel] = useState("");
+  useEffect(() => {
+    setTodayLabel(formatToday());
+  }, [todayKey]);
+
+  function completePrayer(index: number, name: string) {
+    if (checked[index]) return; // sudah selesai: tidak dihitung dua kali
+    const next = checked.map((v, j) => (j === index ? true : v));
+    saveChecklist(childKey, next);
+    refresh();
+    state.setCompletedPrayer(name);
+    setCelebrating(name);
+  }
 
   const [childProfile, setChildProfile] = useState<{
     name: string;
@@ -161,7 +580,7 @@ export function HomeScreen() {
       </header>
       <div className="page-content home-content">
         <section className="paper mission-paper">
-          <p className="date-label">Senin, 28 April 2025</p>
+          <p className="date-label">{todayLabel || "\u00A0"}</p>
           <div className="mission-title">
             <MissionMedalIcon />
             <div>
@@ -175,12 +594,15 @@ export function HomeScreen() {
                 variant="prayer"
                 key={prayer.name}
                 aria-label={`${prayer.name}${checked[i] ? " sudah selesai" : " selesai"}`}
-                onClick={() => {
-                  state.setCompletedPrayer(prayer.name);
-                }}
                 asChild
               >
-                <Link to="/sholat-selesai">
+                <Link
+                  to="/beranda"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    completePrayer(i, prayer.name);
+                  }}
+                >
                   <PrayerIcon name={prayer.name} />
                   <span className="prayer-label">
                     <strong>{prayer.name}</strong>
@@ -194,10 +616,12 @@ export function HomeScreen() {
             ))}
           </div>
           <div className="daily-summary">
-            <strong>2 / 5 selesai</strong>
+            <strong>
+              {doneCount} / {total} selesai
+            </strong>
             <div className="progress-line">
-              <ProgressBar value={40} />
-              <span>40%</span>
+              <ProgressBar value={percent} />
+              <span>{percent}%</span>
             </div>
             <Encouragement>
               Kamu hebat! Terus semangat ya! <Heart size={13} />
@@ -208,12 +632,15 @@ export function HomeScreen() {
           <Trophy size={19} />
           <span>Challenge minggu ini</span>
           <span>
-            18 / 35 <Star size={14} fill="currentColor" />
+            {weekStars} / {total * 7} <Star size={14} fill="currentColor" />
           </span>
           <ChevronRight size={17} />
         </Link>
       </div>
       <BottomNav active="Beranda" />
+      {celebrating && (
+        <PrayerDoneModal prayerName={celebrating} onClose={() => setCelebrating(null)} />
+      )}
     </main>
   );
 }
@@ -277,17 +704,30 @@ export function PrayerDoneScreen() {
   );
 }
 
-const weekRows = [
-  [true, true, true, false, false, false, false],
-  [true, true, false, false, false, false, false],
-  [true, false, false, false, false, false, false],
-  [true, true, false, false, false, false, false],
-  [true, false, false, false, false, false, false],
-];
 export function ChallengeScreen() {
+  const state = useRajin();
+  const total = prayers.length;
+  const { history, todayKey } = useChecklistHistory(String(state.activeChild ?? 0));
   const [week, setWeek] = useState(0);
   const [dateOpen, setDateOpen] = useState(false);
-  const [chosenDate, setChosenDate] = useState("2025-04-28");
+  const [chosenDate, setChosenDate] = useState("");
+
+  const days = todayKey ? weekDays(todayKey, week) : null;
+  const progress = history && days ? weekProgress(history, days, total) : null;
+  const stars = progress?.stars ?? 0;
+  const max = total * 7;
+  const percent = Math.round((stars / max) * 100);
+
+  function pickDate(value: string) {
+    setChosenDate(value);
+    if (value && todayKey) {
+      const currentMonday = weekDays(todayKey, 0)[0].getTime();
+      const chosenMonday = weekDays(value, 0)[0].getTime();
+      setWeek(Math.round((chosenMonday - currentMonday) / (7 * 24 * 60 * 60 * 1000)));
+    }
+    setDateOpen(false);
+  }
+
   return (
     <Page title="Challenge Minggu Ini" active="Challenge">
       <div className="week-switch">
@@ -299,9 +739,7 @@ export function ChallengeScreen() {
         >
           <ChevronLeft size={19} />
         </Button>
-        <span>
-          {week === 0 ? "28 Apr – 4 Mei 2025" : week < 0 ? "21 – 27 April 2025" : "5 – 11 Mei 2025"}
-        </span>
+        <span>{days ? weekLabel(days) : "\u00A0"}</span>
         <Button
           variant="softIcon"
           size="icon"
@@ -316,23 +754,19 @@ export function ChallengeScreen() {
           Tanggal minggu
           <input
             type="date"
-            value={chosenDate}
-            onChange={(e) => {
-              setChosenDate(e.target.value);
-              setWeek(e.target.value < "2025-04-28" ? -1 : e.target.value > "2025-05-04" ? 1 : 0);
-              setDateOpen(false);
-            }}
+            value={chosenDate || todayKey || ""}
+            onChange={(e) => pickDate(e.target.value)}
           />
         </label>
       )}
       <section className="paper challenge-summary">
         <h2>Progress</h2>
         <div className="total-stars">
-          {week === 0 ? 18 : week < 0 ? 33 : 0} / 35 <Star fill="currentColor" size={30} />
+          {stars} / {max} <Star fill="currentColor" size={30} />
         </div>
         <div className="progress-line">
-          <ProgressBar value={week === 0 ? 51 : week < 0 ? 94 : 0} />
-          <span>{week === 0 ? 51 : week < 0 ? 94 : 0}%</span>
+          <ProgressBar value={percent} />
+          <span>{percent}%</span>
         </div>
       </section>
       <section className="week-grid" aria-label="Jadwal sholat mingguan">
@@ -348,13 +782,13 @@ export function ChallengeScreen() {
               <PrayerIcon name={prayer.name} />
               {prayer.name}
             </span>
-            {(weekRows[row] ?? []).map((done, col) => (
+            {(progress?.rows[row] ?? Array<boolean>(7).fill(false)).map((done, col) => (
               <span
                 key={col}
-                className={`week-cell ${done && week <= 0 ? "complete" : ""}`}
-                aria-label={`${prayer.name}, ${["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"][col]}: ${done && week <= 0 ? "selesai" : "belum selesai"}`}
+                className={`week-cell ${done ? "complete" : ""}`}
+                aria-label={`${prayer.name}, ${["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"][col]}: ${done ? "selesai" : "belum selesai"}`}
               >
-                {done && week <= 0 ? <Check size={13} /> : <span />}
+                {done ? <Check size={13} /> : <span />}
               </span>
             ))}
           </div>
