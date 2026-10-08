@@ -11,7 +11,7 @@
 
 ## Application rules
 - Keep shareable screens as individual TanStack file routes; navigation must remain refreshable and deep-linkable.
-- Use the RajinProvider for temporary in-memory preview data only; persistence and protected parent access await a separate backend phase.
+- Use the RajinProvider for temporary in-memory preview data only; the parent-entry PIN is verified in a server function against an encrypted secret, and future persisted private data requires independent authenticated authorization.
 - Keep shared mobile chrome in the Rajin shared module and reference-screen views in the screens module to maintain one visual system across routes.
 - Define all presentation tokens and app-specific control variants in the global stylesheet and Button variants; keep the reference's rounded pastel treatments consistent.
 - Render home and challenge prayer illustrations through the dedicated PrayerIcon SVG module with global semantic palette classes and context-specific sizing; icon-only updates must not affect unrequested screens or row geometry.

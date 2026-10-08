@@ -740,7 +740,7 @@ textarea:focus-visible {
 }
 .earned-title {
   display: flex;
-  gap: 15px;
+  gap: 7px;
   align-items: center;
 }
 .earned-title h2 {
@@ -748,6 +748,8 @@ textarea:focus-visible {
 }
 .big-star {
   font-size: 38px;
+  display: inline-flex;
+  flex-shrink: 0;
 }
 .earned-paper > p {
   margin-top: 10px;
@@ -1389,14 +1391,29 @@ select:disabled {
   width: 100%;
   resize: vertical;
   font-size: 12px;
-  padding-right: 45px;
   line-height: 1.6;
 }
-.reward-text-wrap svg {
-  position: absolute;
-  right: 9px;
-  top: 20px;
-  color: var(--rose-ink);
+.parent-pin-form {
+  padding: 24px 20px;
+  margin-top: 24px;
+  text-align: center;
+}
+.parent-pin-form > svg {
+  color: var(--green-ink);
+  margin: 0 auto 12px;
+}
+.parent-pin-form h2 {
+  font-size: 20px;
+}
+.parent-pin-form input {
+  width: 100%;
+  text-align: center;
+  font-size: 22px;
+  min-height: 48px;
+}
+.parent-pin-form > .joy-button {
+  width: 100%;
+  margin-top: 18px;
 }
 .reward-templates {
   margin-top: 17px;

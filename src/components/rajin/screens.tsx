@@ -36,6 +36,9 @@ import welcome from "@/assets/welcome.jpg";
 import girl from "@/assets/aisyah.png";
 import scenery from "@/assets/celebration.jpg";
 import { PrayerIcon, MissionMedalIcon } from "./prayer-icon";
+import { useServerFn } from "@tanstack/react-start";
+import { parentPinSchema } from "@/lib/parent-pin";
+import { verifyParentPin } from "@/lib/parent-pin.functions";
 
 export function WelcomeScreen() {
   return (
@@ -497,6 +500,65 @@ export function ChallengeDoneScreen() {
 export function ParentScreen() {
   const [tab, setTab] = useState("Ringkasan");
   const { children, reward } = useRajin();
+  const [unlocked, setUnlocked] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [checking, setChecking] = useState(false);
+  const verifyPin = useServerFn(verifyParentPin);
+
+  async function enterParentMode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (checking) return;
+    const input = parentPinSchema.safeParse({ pin });
+    if (!input.success) {
+      setPinError("Masukkan PIN 4 digit.");
+      return;
+    }
+    setChecking(true);
+    setPinError("");
+    try {
+      const result = await verifyPin({ data: input.data });
+      setPin("");
+      if (result.valid) setUnlocked(true);
+      else setPinError("PIN salah, coba lagi.");
+    } catch {
+      setPinError("PIN belum dapat diperiksa. Coba lagi.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  if (!unlocked) {
+    return (
+      <Page title="Mode Orang Tua" back="/beranda" active="Mama">
+        <form className="paper parent-pin-form" onSubmit={enterParentMode} noValidate>
+          <LockKeyhole size={38} aria-hidden="true" />
+          <h2>Masukkan PIN</h2>
+          <label className="form-label" htmlFor="parent-pin">PIN Mode Orang Tua</label>
+          <input
+            id="parent-pin"
+            type="password"
+            inputMode="numeric"
+            autoComplete="off"
+            pattern="[0-9]{4}"
+            maxLength={4}
+            value={pin}
+            disabled={checking}
+            aria-invalid={Boolean(pinError)}
+            aria-describedby={pinError ? "parent-pin-error" : undefined}
+            onChange={(event) => {
+              setPin(event.target.value.replace(/\D/g, "").slice(0, 4));
+              setPinError("");
+            }}
+          />
+          {pinError && <p id="parent-pin-error" className="form-error" role="alert">{pinError}</p>}
+          <Button variant="joy" size="lg" type="submit" disabled={checking}>
+            {checking ? "Memeriksa…" : "Masuk"}
+          </Button>
+        </form>
+      </Page>
+    );
+  }
   return (
     <Page title="Mode Orang Tua" action={<SettingLink />} active="Mama">
       <div className="segment">
@@ -735,7 +797,6 @@ export function RewardScreen() {
             }}
             rows={3}
           />
-          <Bike size={35} />
         </div>
         {!reward.trim() && <p className="form-error">Isi hadiah untuk anak terlebih dahulu.</p>}
       </section>
