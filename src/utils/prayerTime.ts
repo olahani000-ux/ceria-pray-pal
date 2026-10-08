@@ -1,87 +1,55 @@
-import { useEffect, useState } from 'react';
-import { Lock } from 'lucide-react';
-import { getPrayerStatus, type PrayerId } from '../utils/prayerTime';
+export type PrayerId = 'subuh' | 'dzuhur' | 'ashar' | 'maghrib' | 'isya';
 
-interface PrayerLockButtonProps {
-  prayerId: PrayerId;
-  done: boolean;
-  onToggle: () => void;
-  /** Mode orang tua: melewati gembok (untuk testing). Simpan state-nya di komponen induk kartu. */
-  isParentMode?: boolean;
-  label?: string;
+export interface PrayerStatusResult {
+  status: 'locked' | 'open' | 'late';
+  message: string;
 }
 
-/**
- * Tombol aksi untuk kartu sholat dengan Time-Lock.
- * Pakai di dalam kartu sholat yang sudah ada, menggantikan tombol "tandai sholat" lama:
- *
- *   const [isParentMode, setIsParentMode] = useState(false);
- *   <PrayerLockButton prayerId="dzuhur" done={done} onToggle={toggle} isParentMode={isParentMode} />
- */
-export default function PrayerLockButton({
-  prayerId,
-  done,
-  onToggle,
-  isParentMode = false,
-  label = 'Sudah Sholat',
-}: PrayerLockButtonProps) {
-  const [now, setNow] = useState(() => new Date());
+interface PrayerSchedule {
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+}
 
-  // Perbarui countdown tiap 30 detik
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
+const DEFAULT_SCHEDULES: Record<PrayerId, PrayerSchedule> = {
+  subuh: { startHour: 4, startMinute: 30, endHour: 6, endMinute: 0 },
+  dzuhur: { startHour: 11, startMinute: 50, endHour: 15, endMinute: 0 },
+  ashar: { startHour: 15, startMinute: 10, endHour: 18, endMinute: 0 },
+  maghrib: { startHour: 18, startMinute: 5, endHour: 19, endMinute: 15 },
+  isya: { startHour: 19, startMinute: 20, endHour: 23, endMinute: 59 },
+};
 
-  const { status, message } = getPrayerStatus(prayerId, now);
-  const locked = status === 'locked' && !isParentMode;
-
-  if (done) {
-    return (
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full rounded-2xl bg-green-500 px-4 py-3 font-semibold text-white"
-      >
-        Selesai ✓
-      </button>
-    );
+export function getPrayerStatus(prayerId: PrayerId, now: Date = new Date()): PrayerStatusResult {
+  const schedule = DEFAULT_SCHEDULES[prayerId];
+  if (!schedule) {
+    return { status: 'open', message: 'Waktu sholat telah tiba' };
   }
 
-  if (locked) {
-    return (
-      <div className="w-full">
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-gray-200 px-4 py-3 font-semibold text-gray-500"
-        >
-          <Lock size={18} aria-hidden="true" />
-          Terkunci 🔒
-        </button>
-        <p className="mt-1 text-center text-xs text-gray-500">{message}</p>
-      </div>
-    );
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const startMinutes = schedule.startHour * 60 + schedule.startMinute;
+  const endMinutes = schedule.endHour * 60 + schedule.endMinute;
+
+  if (currentMinutes < startMinutes) {
+    const diff = startMinutes - currentMinutes;
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    const countdown = hours > 0 ? `${hours} jam ${minutes} menit lagi` : `${minutes} menit lagi`;
+    return {
+      status: 'locked',
+      message: `Belum masuk waktu (${countdown})`,
+    };
   }
 
-  const styles =
-    status === 'late'
-      ? 'bg-yellow-400 text-yellow-950'
-      : 'bg-green-500 text-white animate-pulse';
+  if (currentMinutes > endMinutes) {
+    return {
+      status: 'late',
+      message: 'Waktu sholat sudah lewat, tetap dihitung ya!',
+    };
+  }
 
-  return (
-    <div className="w-full">
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`w-full rounded-2xl px-4 py-3 font-semibold ${styles}`}
-      >
-        {label}
-      </button>
-      <p className="mt-1 text-center text-xs text-gray-500">
-        {isParentMode && status === 'locked' ? 'Mode orang tua: gembok dilewati' : message}
-      </p>
-    </div>
-  );
+  return {
+    status: 'open',
+    message: 'Waktu sholat sedang berlangsung',
+  };
 }
